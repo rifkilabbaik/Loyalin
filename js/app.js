@@ -69,6 +69,7 @@ const Scanner = {
     if (this.stream) { this.resume(); return; }
     if (this.starting || !navigator.mediaDevices) return;
     this.starting = true;
+    $('#cam').classList.add('starting');
     const video = $('#video');
     try {
       this.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: this.facing, width: { ideal: 1280 }, height: { ideal: 1280 } }, audio: false });
@@ -88,6 +89,7 @@ const Scanner = {
       if (e && e.name === 'NotAllowedError') App.toast('Izinkan akses kamera');
     } finally {
       this.starting = false;
+      $('#cam').classList.remove('starting');
     }
   },
 
@@ -169,6 +171,127 @@ const Scanner = {
   }
 };
 
+class Dropdown {
+  constructor(root, opts) {
+    this.root = root;
+    this.placeholder = (opts && opts.placeholder) || '';
+    this.onChange = opts && opts.onChange;
+    this.btn = $('.dd-btn', root);
+    this.valEl = $('.dd-val', root);
+    this.pop = $('.dd-pop', root);
+    this.list = $('.dd-list', root);
+    this.search = $('.dd-search', root);
+    this.q = $('.dd-search input', root);
+    this.items = [];
+    this.shown = [];
+    this.value = '';
+    this.act = -1;
+    this.btn.addEventListener('click', () => this.toggle());
+    this.q.addEventListener('input', () => { this.act = -1; this.render(); });
+    this.list.addEventListener('click', (e) => { const o = e.target.closest('.dd-opt'); if (o) this.pick(o.dataset.v); });
+    root.addEventListener('keydown', (e) => this.key(e));
+    document.addEventListener('pointerdown', (e) => { if (this.isOpen && !root.contains(e.target)) this.close(); });
+    this.setValue('', true);
+  }
+
+  get isOpen() { return !this.pop.hidden; }
+
+  setItems(items) {
+    this.items = (items || []).slice();
+    if (this.isOpen) this.render();
+  }
+
+  setValue(v, silent) {
+    this.value = v || '';
+    this.valEl.textContent = this.value || this.placeholder;
+    this.root.classList.toggle('empty', !this.value);
+    this.btn.classList.remove('bad');
+    if (this.isOpen) this.render();
+    if (!silent && this.onChange) this.onChange(this.value);
+  }
+
+  loading(on) {
+    this.root.classList.toggle('loading', on);
+    if (this.isOpen) this.render();
+  }
+
+  open() {
+    const many = this.items.length > 6;
+    this.q.value = '';
+    this.act = -1;
+    const r = this.btn.getBoundingClientRect();
+    const below = window.innerHeight - r.bottom;
+    this.root.classList.toggle('up', below < 340 && r.top > below);
+    this.pop.hidden = false;
+    this.root.classList.add('open');
+    this.btn.setAttribute('aria-expanded', 'true');
+    this.render();
+    const sel = $('.dd-opt.sel', this.list);
+    if (sel) sel.scrollIntoView({ block: 'nearest' });
+    if (many && matchMedia('(hover: hover)').matches) this.q.focus();
+  }
+
+  close() {
+    if (!this.isOpen) return;
+    this.pop.hidden = true;
+    this.root.classList.remove('open', 'up');
+    this.btn.setAttribute('aria-expanded', 'false');
+  }
+
+  toggle() { if (this.isOpen) this.close(); else this.open(); }
+
+  render() {
+    this.search.hidden = this.items.length <= 6;
+    if (!this.items.length && this.root.classList.contains('loading')) {
+      this.shown = [];
+      this.list.innerHTML = '<span class="dd-skel"></span><span class="dd-skel"></span><span class="dd-skel"></span>';
+      return;
+    }
+    const q = this.q.value.trim().toLowerCase();
+    this.shown = q ? this.items.filter(t => t.toLowerCase().indexOf(q) >= 0) : this.items;
+    if (!this.shown.length) { this.list.innerHTML = `<div class="dd-empty">${ic('store')}</div>`; return; }
+    this.list.innerHTML = this.shown.map((t, i) => {
+      const sel = t === this.value;
+      return `<button type="button" role="option" aria-selected="${sel}" class="dd-opt${sel ? ' sel' : ''}${i === this.act ? ' act' : ''}" data-v="${esc(t)}" style="--i:${Math.min(i, 12)}"><span class="dd-ic">${ic('store')}</span><span class="t">${esc(t)}</span><svg class="ic ck"><use href="#i-check"/></svg></button>`;
+    }).join('');
+  }
+
+  pick(v) {
+    this.close();
+    this.btn.focus();
+    if (v !== this.value) this.setValue(v);
+  }
+
+  key(e) {
+    if (e.key === 'Escape' && this.isOpen) { e.preventDefault(); e.stopPropagation(); this.close(); this.btn.focus(); return; }
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (!this.isOpen) this.open();
+      const n = this.shown.length;
+      if (!n) return;
+      this.act = e.key === 'ArrowDown' ? (this.act + 1) % n : (this.act - 1 + n) % n;
+      $$('.dd-opt', this.list).forEach((o, i) => o.classList.toggle('act', i === this.act));
+      const a = $('.dd-opt.act', this.list);
+      if (a) a.scrollIntoView({ block: 'nearest' });
+      return;
+    }
+    if (e.key === 'Enter' && this.isOpen && this.act >= 0 && this.shown[this.act]) { e.preventDefault(); this.pick(this.shown[this.act]); }
+  }
+}
+
+const Loader = {
+  n: 0,
+  show(icon) {
+    this.n++;
+    $('#loaderIc').innerHTML = `<use href="#i-${icon || 'upload'}"/>`;
+    $('#loader').hidden = false;
+  },
+  hide() {
+    this.n = Math.max(0, this.n - 1);
+    if (!this.n) $('#loader').hidden = true;
+  }
+};
+
 const App = {
   view: '',
   member: null,
@@ -194,14 +317,14 @@ const App = {
     $('#inManual').addEventListener('input', (e) => e.target.closest('.field').classList.remove('bad'));
     $('#inName').addEventListener('input', (e) => e.target.closest('.field').classList.remove('bad'));
     $('#inKode').addEventListener('input', (e) => e.target.closest('.field').classList.remove('bad'));
-    $('#inToko').addEventListener('change', (e) => { e.target.classList.toggle('empty', !e.target.value); e.target.closest('.field').classList.remove('bad'); });
+    this.ddLogin = new Dropdown($('#ddToko'), { placeholder: 'Pilih toko' });
+    this.ddSet = new Dropdown($('#ddSetToko'), { onChange: (v) => this.pickToko(v) });
     $('#setupForm').addEventListener('submit', (e) => { e.preventDefault(); this.login(); });
     $('#txForm').addEventListener('submit', (e) => { e.preventDefault(); this.saveTx(); });
     $('#newForm').addEventListener('submit', (e) => { e.preventDefault(); this.register(); });
     $('#manualForm').addEventListener('submit', (e) => { e.preventDefault(); this.submitManual(); });
     $$('#manualSeg button').forEach(b => b.addEventListener('click', () => this.setManualMode(b.dataset.mode)));
     $$('#manualSheet [data-close]').forEach(el => el.addEventListener('click', () => this.closeManual()));
-    $('#setToko').addEventListener('change', (e) => this.pickToko(e.target.value));
     $('#tokoForm').addEventListener('submit', (e) => { e.preventDefault(); this.switchToko(); });
     $('#setKode').addEventListener('input', (e) => e.target.closest('.field').classList.remove('bad'));
     $$('#swatches button').forEach(b => b.addEventListener('click', () => { Store.set('palette', b.dataset.palette); this.applyTheme(); }));
@@ -219,12 +342,40 @@ const App = {
     matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => this.applyTheme());
     this.applyTheme();
 
+    let ready;
     if (Store.get('kode') && Store.get('toko')) {
       this.enter();
       this.refresh();
+      ready = Promise.resolve();
     } else {
-      this.showSetup();
+      ready = this.showSetup();
     }
+    const min = new Promise(r => setTimeout(r, 650));
+    const max = new Promise(r => setTimeout(r, 3500));
+    Promise.race([Promise.all([ready, min]), max]).then(() => this.hideSplash());
+  },
+
+  hideSplash() {
+    const s = $('#splash');
+    if (!s || s.classList.contains('out')) return;
+    s.classList.add('out');
+    setTimeout(() => s.remove(), 400);
+  },
+
+  countUp(el, to, from, prefix) {
+    to = Number(to) || 0;
+    from = Number(from) || 0;
+    prefix = prefix || '';
+    cancelAnimationFrame(el._raf);
+    if (to === from || matchMedia('(prefers-reduced-motion: reduce)').matches) { el.textContent = prefix + fmt(to); return; }
+    const t0 = performance.now(), d = 750;
+    const step = (t) => {
+      const k = Math.min(1, (t - t0) / d);
+      el.textContent = prefix + fmt(from + (to - from) * (1 - Math.pow(1 - k, 3)));
+      if (k < 1) el._raf = requestAnimationFrame(step);
+    };
+    el.textContent = prefix + fmt(from);
+    el._raf = requestAnimationFrame(step);
   },
 
   cfg() {
@@ -256,24 +407,17 @@ const App = {
     if (meta && bg) meta.setAttribute('content', bg);
   },
 
-  fillToko(select, list, selected, placeholder) {
-    const opts = (placeholder ? [`<option value="">${esc(placeholder)}</option>`] : [])
-      .concat(list.map(t => `<option value="${esc(t)}">${esc(t)}</option>`));
-    if (selected && list.indexOf(selected) < 0) opts.push(`<option value="${esc(selected)}">${esc(selected)}</option>`);
-    select.innerHTML = opts.join('');
-    select.value = selected || '';
-    select.classList.toggle('empty', !select.value);
-  },
-
-  async loadToko(select, placeholder) {
-    const current = select.value || Store.get('toko');
-    this.fillToko(select, Store.json('tokoList', []), current, placeholder);
+  async loadToko(dd) {
+    dd.setItems(Store.json('tokoList', []));
+    dd.loading(true);
     try {
       const list = await Api.toko();
       Store.setJson('tokoList', list);
-      this.fillToko(select, list, select.value || current, placeholder);
+      dd.setItems(list);
     } catch (e) {
       this.toast(e.message, true);
+    } finally {
+      dd.loading(false);
     }
   },
 
@@ -281,8 +425,8 @@ const App = {
     Scanner.stop();
     $('#inKode').value = '';
     this.show('setup');
-    this.fillToko($('#inToko'), Store.json('tokoList', []), Store.get('toko'), 'Pilih toko');
-    this.loadToko($('#inToko'), 'Pilih toko');
+    this.ddLogin.setValue(Store.get('toko'), true);
+    return this.loadToko(this.ddLogin);
   },
 
   toggleEye() {
@@ -293,12 +437,12 @@ const App = {
   },
 
   async login() {
-    const toko = $('#inToko').value;
+    const toko = this.ddLogin.value;
     const kode = $('#inKode').value.trim();
-    if (!toko) { this.bad('#inToko'); return; }
+    if (!toko) { this.bad('#ddToko .dd-btn'); return; }
     if (!kode) { this.bad('#inKode'); return; }
     const btn = $('#btnLogin');
-    this.busy(btn, true);
+    this.busy(btn, true, 'lock');
     try {
       const d = await Api.login(kode, toko);
       Store.set('kode', kode);
@@ -332,6 +476,7 @@ const App = {
   show(view) {
     const prev = this.view;
     this.view = view;
+    if (this.ddLogin) { this.ddLogin.close(); this.ddSet.close(); }
     $$('.view').forEach(v => v.classList.toggle('active', v.dataset.view === view));
     const sub = ['member', 'new', 'done', 'settings'].indexOf(view) >= 0;
     $('#topbar').hidden = view === 'setup';
@@ -416,7 +561,7 @@ const App = {
     $('#mInitial').textContent = (m.name || '?').trim().charAt(0).toUpperCase();
     $('#mName').textContent = m.name;
     $('#mPhone').textContent = Phone.display(m.phone);
-    $('#mPoints').textContent = fmt(m.points);
+    this.countUp($('#mPoints'), m.points, 0);
     $('#inAmount').value = '';
     this.onAmount($('#inAmount'));
     this.show('member');
@@ -485,7 +630,7 @@ const App = {
   async sendTx(amount, force) {
     const m = this.member;
     const btn = $('#btnSave');
-    this.busy(btn, true);
+    this.busy(btn, true, 'upload');
     try {
       const r = await Api.addTx({ id: m.id, amount, force: !!force });
       if (r.duplicate) {
@@ -533,7 +678,7 @@ const App = {
     });
     if (!ok) return;
     const btn = $('#btnRegister');
-    this.busy(btn, true);
+    this.busy(btn, true, 'upload');
     try {
       const r = await Api.register({ id: this.newId, name, phone });
       if (r.exists) this.toast('ID sudah terdaftar');
@@ -547,9 +692,9 @@ const App = {
   },
 
   openDone(r) {
-    $('#dPlus').textContent = '+' + fmt(r.plus);
+    this.countUp($('#dPlus'), r.plus, 0, '+');
     $('#dName').textContent = r.name;
-    $('#dTotal').textContent = fmt(r.total);
+    this.countUp($('#dTotal'), r.total, (Number(r.total) || 0) - (Number(r.plus) || 0));
     this.show('done');
     if (navigator.vibrate) navigator.vibrate([40, 60, 40]);
     const ring = $('#ring');
@@ -588,7 +733,7 @@ const App = {
     const phone = Phone.normalize($('#inManualHp').value);
     if (!Phone.valid(phone)) { this.bad('#inManualHp'); return; }
     const btn = $('#btnFind');
-    this.busy(btn, true);
+    this.busy(btn, true, 'search');
     try {
       const m = await Api.byPhone(phone);
       if (!m) { this.bad('#inManualHp'); this.toast('No. HP belum terdaftar', true); return; }
@@ -606,8 +751,9 @@ const App = {
     this.applyTheme();
     $('#btnInstall').hidden = !this.installEvt;
     $('#tokoForm').hidden = true;
-    this.fillToko($('#setToko'), Store.json('tokoList', []), Store.get('toko'));
-    this.loadToko($('#setToko'));
+    this.ddSet.close();
+    this.ddSet.setValue(Store.get('toko'), true);
+    this.loadToko(this.ddSet);
   },
 
   pickToko(v) {
@@ -619,12 +765,12 @@ const App = {
   },
 
   async switchToko() {
-    const toko = $('#setToko').value;
+    const toko = this.ddSet.value;
     const kode = $('#setKode').value.trim();
     if (!toko || toko === Store.get('toko')) return;
     if (!kode) { this.bad('#setKode'); return; }
     const btn = $('#btnSetToko');
-    this.busy(btn, true);
+    this.busy(btn, true, 'store');
     try {
       const d = await Api.login(kode, toko);
       Store.set('kode', kode);
@@ -702,7 +848,12 @@ const App = {
     $(sel).focus();
   },
 
-  busy(btn, on) { btn.disabled = on; btn.classList.toggle('busy', on); },
+  busy(btn, on, icon) {
+    if (on === !!btn._busy) return;
+    btn._busy = on;
+    btn.disabled = on;
+    if (on) Loader.show(icon); else Loader.hide();
+  },
 
   toast(msg, long) {
     const t = $('#toast');

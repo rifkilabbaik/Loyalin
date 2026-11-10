@@ -53,9 +53,15 @@
       <symbol id="i-auto" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v18" /><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></g></symbol>
       <symbol id="i-logout" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M9 21H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3M16 17l5-5-5-5M21 12H9"/></symbol>
       <symbol id="i-install" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M12 3v12M7 10l5 5 5-5M5 21h14"/></symbol>
+      <symbol id="i-upload" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18a5 5 0 0 1-.6-10A6 6 0 0 1 18 8.5a4.5 4.5 0 0 1-.5 9.5"/><path d="M12 12v9M8.5 15.5L12 12l3.5 3.5"/></g></symbol>
       <symbol id="i-alert" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></g></symbol>
     </defs>
   </svg>
+
+  <div class="splash" id="splash" aria-hidden="true">
+    <span class="splash-logo"><img src="icons/logo.svg" alt="" /></span>
+    <span class="dots"><i></i><i></i><i></i></span>
+  </div>
 
   <header class="topbar" id="topbar">
     <button class="icon-btn" id="btnBack" hidden aria-label="Kembali"><svg class="ic"><use href="#i-back"/></svg></button>
@@ -74,11 +80,10 @@
         <div class="setup-word">Loyal<b>in</b></div>
       </div>
       <form class="card" id="setupForm" autocomplete="off">
-        <label class="label" for="inToko">Toko</label>
-        <div class="field field-select">
-          <svg class="ic"><use href="#i-store"/></svg>
-          <select id="inToko"><option value="">Pilih toko</option></select>
-          <svg class="ic chev"><use href="#i-down"/></svg>
+        <span class="label">Toko</span>
+        <div class="dd" id="ddToko">
+          <button type="button" class="field dd-btn" aria-haspopup="listbox" aria-expanded="false"><svg class="ic"><use href="#i-store"/></svg><span class="dd-val"></span><span class="dd-spin"></span><svg class="ic chev"><use href="#i-down"/></svg></button>
+          <div class="dd-pop" hidden><div class="field dd-search"><svg class="ic"><use href="#i-search"/></svg><input type="search" autocomplete="off" /></div><div class="dd-list" role="listbox"></div></div>
         </div>
         <label class="label" for="inKode">Kode akses</label>
         <div class="field">
@@ -95,6 +100,7 @@
         <video id="video" playsinline muted></video>
         <div class="cam-idle" id="camIdle"><span class="cam-bubble"><svg class="ic"><use href="#i-qr"/></svg></span></div>
         <div class="cam-frame"><i></i><i></i><i></i><i></i><span class="cam-line"></span></div>
+        <div class="cam-busy"><span class="cam-busy-bubble"><span class="dots"><i></i><i></i><i></i></span></span></div>
       </div>
       <div class="cam-tools">
         <button class="round-btn" id="btnTorch" aria-label="Senter"><svg class="ic"><use href="#i-flash"/></svg></button>
@@ -172,11 +178,10 @@
 
     <section class="view" data-view="settings">
       <div class="card">
-        <label class="label" for="setToko">Toko</label>
-        <div class="field field-select">
-          <svg class="ic"><use href="#i-store"/></svg>
-          <select id="setToko"></select>
-          <svg class="ic chev"><use href="#i-down"/></svg>
+        <span class="label">Toko</span>
+        <div class="dd" id="ddSetToko">
+          <button type="button" class="field dd-btn" aria-haspopup="listbox" aria-expanded="false"><svg class="ic"><use href="#i-store"/></svg><span class="dd-val"></span><span class="dd-spin"></span><svg class="ic chev"><use href="#i-down"/></svg></button>
+          <div class="dd-pop" hidden><div class="field dd-search"><svg class="ic"><use href="#i-search"/></svg><input type="search" autocomplete="off" /></div><div class="dd-list" role="listbox"></div></div>
         </div>
         <form class="toko-switch" id="tokoForm" autocomplete="off" hidden>
           <div class="field">
@@ -237,6 +242,14 @@
         <button class="btn btn-soft" data-no id="cNo">Ubah</button>
         <button class="btn btn-primary" data-yes id="cYes">Ya, simpan</button>
       </div>
+    </div>
+  </div>
+
+  <div class="loader" id="loader" hidden>
+    <div class="loader-card" role="status" aria-live="polite">
+      <span class="loader-bubble"><svg class="ic" id="loaderIc"><use href="#i-upload"/></svg></span>
+      <span class="loader-shadow"></span>
+      <span class="dots"><i></i><i></i><i></i></span>
     </div>
   </div>
 
