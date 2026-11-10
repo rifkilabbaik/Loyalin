@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#FFF8F3" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Loyalin" />
+  <title>Loyalin</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="icons/logo.svg" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@600;700;800&display=swap" />
+  <link rel="stylesheet" href="css/style.css" />
+  <script>
+    (function () {
+      try {
+        var p = localStorage.getItem('palette') || 'orange';
+        var m = localStorage.getItem('theme') || 'auto';
+        if (m === 'auto') m = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-palette', p);
+        document.documentElement.setAttribute('data-mode', m);
+      } catch (e) {}
+    })();
+  </script>
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <symbol id="i-gear" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></g></symbol>
+      <symbol id="i-back" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="M15 6l-6 6 6 6"/></symbol>
+      <symbol id="i-down" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+      <symbol id="i-star" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2.8c.5 0 .9.3 1.1.7l2.2 4.6 5 .7c1 .1 1.4 1.4.7 2.1l-3.7 3.5.9 5c.2 1-.9 1.8-1.8 1.3L12 18.3l-4.5 2.4c-.9.5-2-.3-1.8-1.3l.9-5-3.7-3.5c-.7-.7-.3-2 .7-2.1l5-.7 2.2-4.6c.3-.4.7-.7 1.2-.7z"/></symbol>
+      <symbol id="i-phone" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></symbol>
+      <symbol id="i-user" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></g></symbol>
+      <symbol id="i-user-plus" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="8" r="4"/><path d="M2 21a8 8 0 0 1 13.5-5.8M19 14v6M16 17h6"/></g></symbol>
+      <symbol id="i-keyboard" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="4"/><path d="M6 9h.01M10 9h.01M14 9h.01M18 9h.01M6 13h.01M18 13h.01M9 15.5h6"/></g></symbol>
+      <symbol id="i-flash" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M13 2L4.5 13.5H12L11 22l8.5-11.5H12z"/></symbol>
+      <symbol id="i-flip" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8M21 3v5h-5M21 12a9 9 0 0 1-15.5 6.2L3 16M3 21v-5h5"/></g></symbol>
+      <symbol id="i-qr" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><path d="M14 14h3v3M21 14v.01M14 21h.01M17.5 21H21v-3.5"/></g></symbol>
+      <symbol id="i-arrow" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M13 6l6 6-6 6"/></symbol>
+      <symbol id="i-search" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></g></symbol>
+      <symbol id="i-hash" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" d="M5 9h15M4 15h15M10 3L8 21M16 3l-2 18"/></symbol>
+      <symbol id="i-store" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-9"/><path d="M3 7l2-4h14l2 4a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0z"/><path d="M10 21v-5h4v5"/></g></symbol>
+      <symbol id="i-lock" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="4"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></g></symbol>
+      <symbol id="i-eye" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></g></symbol>
+      <symbol id="i-sun" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></g></symbol>
+      <symbol id="i-moon" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></symbol>
+      <symbol id="i-auto" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v18" /><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></g></symbol>
+      <symbol id="i-logout" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M9 21H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3M16 17l5-5-5-5M21 12H9"/></symbol>
+      <symbol id="i-install" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M12 3v12M7 10l5 5 5-5M5 21h14"/></symbol>
+      <symbol id="i-alert" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></g></symbol>
+    </defs>
+  </svg>
+
+  <header class="topbar" id="topbar">
+    <button class="icon-btn" id="btnBack" hidden aria-label="Kembali"><svg class="ic"><use href="#i-back"/></svg></button>
+    <div class="brand" id="brand"><img src="icons/logo.svg" alt="" width="38" height="38" /><span>Loyal<b>in</b></span></div>
+    <h1 class="page-title" id="pageTitle" hidden></h1>
+    <span class="spacer"></span>
+    <button class="toko-chip" id="btnToko"><svg class="ic"><use href="#i-store"/></svg><span id="tokoName"></span></button>
+    <button class="icon-btn" id="btnSettings" aria-label="Pengaturan"><svg class="ic"><use href="#i-gear"/></svg></button>
+  </header>
+
+  <main class="main">
+    <section class="view" data-view="setup">
+      <div class="setup-hero">
+        <span class="bubble b1"></span><span class="bubble b2"></span><span class="bubble b3"></span>
+        <span class="setup-logo"><img src="icons/logo.svg" alt="" /></span>
+        <div class="setup-word">Loyal<b>in</b></div>
+      </div>
+      <form class="card" id="setupForm" autocomplete="off">
+        <label class="label" for="inToko">Toko</label>
+        <div class="field field-select">
+          <svg class="ic"><use href="#i-store"/></svg>
+          <select id="inToko"><option value="">Pilih toko</option></select>
+          <svg class="ic chev"><use href="#i-down"/></svg>
+        </div>
+        <label class="label" for="inKode">Kode akses</label>
+        <div class="field">
+          <svg class="ic"><use href="#i-lock"/></svg>
+          <input id="inKode" type="password" autocomplete="current-password" enterkeyhint="go" maxlength="40" />
+          <button class="eye" type="button" id="btnEye" aria-label="Lihat kode"><svg class="ic"><use href="#i-eye"/></svg></button>
+        </div>
+        <button class="btn btn-primary btn-big" type="submit" id="btnLogin"><svg class="ic"><use href="#i-arrow"/></svg><span>Masuk</span></button>
+      </form>
+    </section>
+
+    <section class="view" data-view="scan">
+      <div class="cam" id="cam">
+        <video id="video" playsinline muted></video>
+        <div class="cam-idle" id="camIdle"><span class="cam-bubble"><svg class="ic"><use href="#i-qr"/></svg></span></div>
+        <div class="cam-frame"><i></i><i></i><i></i><i></i><span class="cam-line"></span></div>
+      </div>
+      <div class="cam-tools">
+        <button class="round-btn" id="btnTorch" aria-label="Senter"><svg class="ic"><use href="#i-flash"/></svg></button>
+        <button class="pill-btn" id="btnManual"><svg class="ic"><use href="#i-keyboard"/></svg><span>Ketik ID / HP</span></button>
+        <button class="round-btn" id="btnFlip" aria-label="Ganti kamera"><svg class="ic"><use href="#i-flip"/></svg></button>
+      </div>
+    </section>
+
+    <section class="view" data-view="member">
+      <div class="hero">
+        <span class="bubble b1"></span><span class="bubble b2"></span>
+        <div class="hero-top"><span class="chip-id" id="mId"></span></div>
+        <div class="hero-who">
+          <span class="avatar" id="mInitial"></span>
+          <div class="who">
+            <div class="who-name" id="mName"></div>
+            <div class="who-phone"><svg class="ic"><use href="#i-phone"/></svg><span id="mPhone"></span></div>
+          </div>
+        </div>
+        <div class="hero-points">
+          <span class="pts-star"><svg class="ic"><use href="#i-star"/></svg></span>
+          <span class="pts-num" id="mPoints">0</span>
+          <span class="pts-unit">poin</span>
+        </div>
+      </div>
+      <form class="card" id="txForm" autocomplete="off">
+        <label class="label" for="inAmount">Belanja</label>
+        <div class="money">
+          <span class="money-pre">Rp</span>
+          <input id="inAmount" inputmode="numeric" enterkeyhint="done" placeholder="0" />
+        </div>
+        <div class="gain empty" id="gain">
+          <span class="gain-plus"><svg class="ic"><use href="#i-star"/></svg><b id="gainPts">+0</b></span>
+          <svg class="ic gain-arrow"><use href="#i-arrow"/></svg>
+          <span class="gain-total" id="gainTotal">0</span>
+        </div>
+        <button class="btn btn-primary btn-big" type="submit" id="btnSave" disabled><svg class="ic"><use href="#i-check"/></svg><span>Simpan</span></button>
+      </form>
+    </section>
+
+    <section class="view" data-view="new">
+      <div class="hero hero-new">
+        <span class="bubble b1"></span><span class="bubble b2"></span>
+        <div class="hero-top"><span class="chip-id" id="nId"></span></div>
+        <div class="new-head">
+          <span class="avatar avatar-plus"><svg class="ic"><use href="#i-user-plus"/></svg></span>
+          <h2>Member baru</h2>
+        </div>
+      </div>
+      <form class="card" id="newForm" autocomplete="off">
+        <label class="label" for="inName">Nama</label>
+        <div class="field">
+          <svg class="ic"><use href="#i-user"/></svg>
+          <input id="inName" autocapitalize="words" enterkeyhint="next" maxlength="60" />
+        </div>
+        <label class="label" for="inPhone">No. HP</label>
+        <div class="field field-phone">
+          <span class="cc">+62</span>
+          <input id="inPhone" type="tel" inputmode="tel" enterkeyhint="done" placeholder="812 3456 7890" maxlength="18" />
+        </div>
+        <button class="btn btn-primary btn-big" type="submit" id="btnRegister"><svg class="ic"><use href="#i-user-plus"/></svg><span>Daftar</span></button>
+      </form>
+    </section>
+
+    <section class="view" data-view="done">
+      <div class="done">
+        <div class="confetti"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <span class="done-check"><svg class="ic"><use href="#i-check"/></svg></span>
+        <div class="done-plus"><svg class="ic"><use href="#i-star"/></svg><span id="dPlus">+0</span></div>
+        <div class="done-name" id="dName"></div>
+        <div class="done-total"><span id="dTotal">0</span> poin</div>
+      </div>
+      <button class="btn btn-primary btn-big" id="btnAgain"><span class="ring" id="ring"></span><svg class="ic"><use href="#i-qr"/></svg><span>Scan lagi</span></button>
+    </section>
+
+    <section class="view" data-view="settings">
+      <div class="card">
+        <label class="label" for="setToko">Toko</label>
+        <div class="field field-select">
+          <svg class="ic"><use href="#i-store"/></svg>
+          <select id="setToko"></select>
+          <svg class="ic chev"><use href="#i-down"/></svg>
+        </div>
+        <span class="label">Warna</span>
+        <div class="swatches" id="swatches">
+          <button data-palette="orange" style="--sw:#EA580C" aria-label="Oranye"></button>
+          <button data-palette="peach" style="--sw:#C24E28" aria-label="Peach"></button>
+          <button data-palette="mint" style="--sw:#0B7F6E" aria-label="Mint"></button>
+          <button data-palette="lavender" style="--sw:#6A4FD8" aria-label="Lavender"></button>
+        </div>
+        <span class="label">Tema</span>
+        <div class="seg" id="themeSeg">
+          <button data-theme="light"><svg class="ic"><use href="#i-sun"/></svg><span>Terang</span></button>
+          <button data-theme="dark"><svg class="ic"><use href="#i-moon"/></svg><span>Gelap</span></button>
+          <button data-theme="auto"><svg class="ic"><use href="#i-auto"/></svg><span>Otomatis</span></button>
+        </div>
+      </div>
+      <div class="set-actions">
+        <button class="btn btn-soft" id="btnInstall" hidden><svg class="ic"><use href="#i-install"/></svg><span>Install</span></button>
+        <button class="btn btn-danger" id="btnLogout"><svg class="ic"><use href="#i-logout"/></svg><span>Keluar</span></button>
+      </div>
+    </section>
+  </main>
+
+  <div class="sheet" id="manualSheet" hidden>
+    <div class="sheet-backdrop" data-close></div>
+    <form class="sheet-card" id="manualForm" autocomplete="off">
+      <span class="grab"></span>
+      <div class="seg" id="manualSeg">
+        <button type="button" data-mode="id" class="on"><svg class="ic"><use href="#i-hash"/></svg><span>ID</span></button>
+        <button type="button" data-mode="hp"><svg class="ic"><use href="#i-phone"/></svg><span>No. HP</span></button>
+      </div>
+      <div class="field field-lg" id="fManualId">
+        <svg class="ic"><use href="#i-search"/></svg>
+        <input id="inManual" inputmode="numeric" enterkeyhint="search" placeholder="ID" maxlength="40" />
+      </div>
+      <div class="field field-lg field-phone" id="fManualHp" hidden>
+        <span class="cc">+62</span>
+        <input id="inManualHp" type="tel" inputmode="tel" enterkeyhint="search" placeholder="812 3456 7890" maxlength="18" />
+      </div>
+      <button class="btn btn-primary btn-big" type="submit" id="btnFind"><svg class="ic"><use href="#i-search"/></svg><span>Cari</span></button>
+    </form>
+  </div>
+
+  <div class="sheet" id="confirmSheet" hidden>
+    <div class="sheet-backdrop" data-no></div>
+    <div class="sheet-card" role="dialog" aria-labelledby="cTitle">
+      <span class="grab"></span>
+      <div class="confirm-head"><span class="confirm-ic" id="cIcon"><svg class="ic"><use href="#i-check"/></svg></span><h3 id="cTitle"></h3></div>
+      <div class="confirm-box" id="cBox"></div>
+      <div class="confirm-warn" id="cWarn" hidden><svg class="ic"><use href="#i-alert"/></svg><span></span></div>
+      <div class="confirm-actions">
+        <button class="btn btn-soft" data-no id="cNo">Ubah</button>
+        <button class="btn btn-primary" data-yes id="cYes">Ya, simpan</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="js/config.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      const had = !!navigator.serviceWorker.controller;
+      let done = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => { if (had && !done) { done = true; location.reload(); } });
+      window.addEventListener('load', () => { navigator.serviceWorker.register('service-worker.js').then(r => r.update()).catch(() => {}); });
+    }
+  </script>
+</body>
+</html>
