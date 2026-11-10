@@ -46,6 +46,8 @@ Sheet dibuat otomatis jika belum ada. Kolom dibaca berdasarkan nama header, sehi
 
 Jika kode akses suatu toko diganti di sheet, kasir di toko itu otomatis diminta memasukkan kode baru.
 
+**Loyalin Dasbor** memakai project Apps Script ini juga: tambahkan file `Dasbor.gs` dari repo [Loyalin-Dasbor](https://github.com/rifkilabbaik/Loyalin-Dasbor). Tanpa file itu, aplikasi kasir tetap berjalan normal.
+
 ## Hosting & install
 
 File statis, bisa memakai **GitHub Pages** (Settings → Pages → Deploy from branch). PWA dan kamera butuh HTTPS.

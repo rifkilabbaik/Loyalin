@@ -69,6 +69,7 @@ function doPost(e) {
 function _route(p) {
   const a = String(p.action || '');
   if (a === 'toko') return _tokoList();
+  if (a.indexOf('dasbor') === 0) return _dasbor(p);
   _auth(p);
   if (a === 'login') return { rpp: _cache.settings.rpp, batas: _cache.settings.batas, toko: _tokoList() };
   if (a === 'member') return _findMember('id', p.id);
