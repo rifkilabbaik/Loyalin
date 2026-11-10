@@ -372,6 +372,7 @@ svg.ic { width: 22px; height: 22px; flex-shrink: 0; }
 #themeSeg button svg.ic { width: 22px; height: 22px; }
 .seg button.on { background: var(--primary); color: var(--on-primary); box-shadow: 0 6px 14px color-mix(in srgb, var(--primary) 30%, transparent); }
 .set-actions { display: flex; flex-direction: column; gap: 12px; }
+.toko-switch { display: flex; flex-direction: column; gap: 10px; animation: rise .3s var(--spring); }
 
 .sheet { position: fixed; inset: 0; z-index: 50; display: flex; align-items: flex-end; justify-content: center; }
 .sheet-backdrop { position: absolute; inset: 0; background: var(--scrim); animation: fade .2s; }

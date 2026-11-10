@@ -201,7 +201,9 @@ const App = {
     $('#manualForm').addEventListener('submit', (e) => { e.preventDefault(); this.submitManual(); });
     $$('#manualSeg button').forEach(b => b.addEventListener('click', () => this.setManualMode(b.dataset.mode)));
     $$('#manualSheet [data-close]').forEach(el => el.addEventListener('click', () => this.closeManual()));
-    $('#setToko').addEventListener('change', (e) => this.changeToko(e.target.value));
+    $('#setToko').addEventListener('change', (e) => this.pickToko(e.target.value));
+    $('#tokoForm').addEventListener('submit', (e) => { e.preventDefault(); this.switchToko(); });
+    $('#setKode').addEventListener('input', (e) => e.target.closest('.field').classList.remove('bad'));
     $$('#swatches button').forEach(b => b.addEventListener('click', () => { Store.set('palette', b.dataset.palette); this.applyTheme(); }));
     $$('#themeSeg button').forEach(b => b.addEventListener('click', () => { Store.set('theme', b.dataset.theme); this.applyTheme(); }));
     $('#btnLogout').addEventListener('click', () => this.logout());
@@ -279,6 +281,7 @@ const App = {
     Scanner.stop();
     $('#inKode').value = '';
     this.show('setup');
+    this.fillToko($('#inToko'), Store.json('tokoList', []), Store.get('toko'), 'Pilih toko');
     this.loadToko($('#inToko'), 'Pilih toko');
   },
 
@@ -602,14 +605,41 @@ const App = {
     this.show('settings');
     this.applyTheme();
     $('#btnInstall').hidden = !this.installEvt;
+    $('#tokoForm').hidden = true;
+    this.fillToko($('#setToko'), Store.json('tokoList', []), Store.get('toko'));
     this.loadToko($('#setToko'));
   },
 
-  changeToko(v) {
-    if (!v) return;
-    Store.set('toko', v);
-    $('#tokoName').textContent = v;
-    this.toast(v);
+  pickToko(v) {
+    const other = !!v && v !== Store.get('toko');
+    $('#tokoForm').hidden = !other;
+    $('#setKode').value = '';
+    $('#setKode').closest('.field').classList.remove('bad');
+    if (other) setTimeout(() => $('#setKode').focus(), 120);
+  },
+
+  async switchToko() {
+    const toko = $('#setToko').value;
+    const kode = $('#setKode').value.trim();
+    if (!toko || toko === Store.get('toko')) return;
+    if (!kode) { this.bad('#setKode'); return; }
+    const btn = $('#btnSetToko');
+    this.busy(btn, true);
+    try {
+      const d = await Api.login(kode, toko);
+      Store.set('kode', kode);
+      Store.set('toko', toko);
+      this.saveSession(d);
+      $('#tokoName').textContent = toko;
+      $('#tokoForm').hidden = true;
+      $('#setKode').value = '';
+      this.toast(toko);
+    } catch (e) {
+      if (e.code === 'AUTH') this.bad('#setKode');
+      this.toast(e.message, true);
+    } finally {
+      this.busy(btn, false);
+    }
   },
 
   async install() {

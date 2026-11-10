@@ -24,15 +24,18 @@ const TX_COLS = [
   ['balance', 'Saldo Poin', ['total poin']],
   ['store', 'Toko', ['nama toko']]
 ];
-const TOKO_COLS = [['store', 'Nama Toko', ['toko', 'store', 'nama store', 'cabang']]];
+const TOKO_COLS = [
+  ['store', 'Nama Toko', ['toko', 'store', 'nama store', 'cabang']],
+  ['kode', 'Kode Akses', ['kode', 'kode toko', 'pin', 'password']]
+];
 const SET_COLS = [['key', 'Pengaturan', ['kunci', 'nama']], ['value', 'Nilai', ['isi', 'value']]];
-const DEFAULTS = [['Kode Akses', ''], ['Rupiah per Poin', '1000'], ['Batas Belanja', '5000000']];
+const DEFAULTS = [['Rupiah per Poin', '1000'], ['Batas Belanja', '5000000']];
 
 const FORMATS = {
   id: '@', phone: '@',
   at: 'yyyy-mm-dd hh:mm:ss', createdAt: 'yyyy-mm-dd hh:mm:ss', lastAt: 'yyyy-mm-dd hh:mm:ss',
   amount: '#,##0', spent: '#,##0', points: '#,##0', balance: '#,##0', count: '0',
-  value: '@'
+  value: '@', kode: '@'
 };
 const TEXT_KEYS = ['id', 'phone'];
 const DUP_SECONDS = 120;
@@ -67,7 +70,7 @@ function _route(p) {
   const a = String(p.action || '');
   if (a === 'toko') return _tokoList();
   _auth(p);
-  if (a === 'login') return { rpp: _cache.settings.rpp, batas: _cache.settings.batas, toko: _cache.toko };
+  if (a === 'login') return { rpp: _cache.settings.rpp, batas: _cache.settings.batas, toko: _tokoList() };
   if (a === 'member') return _findMember('id', p.id);
   if (a === 'cariHp') return _findMember('phone', p.phone);
   if (a === 'register') return _locked(() => _register(p));
@@ -76,14 +79,14 @@ function _route(p) {
 }
 
 function _auth(p) {
-  const s = _settings();
-  if (!s.kode) throw _fail('Kode akses belum diisi di sheet Pengaturan', 'SETUP');
-  if (String(p.kode || '').trim() !== s.kode) { Utilities.sleep(800); throw _fail('Kode akses salah', 'AUTH'); }
-  const list = _tokoList();
-  if (!list.length) throw _fail('Sheet Toko masih kosong', 'SETUP');
-  if (list.indexOf(String(p.toko || '').trim()) < 0) throw _fail('Pilih toko lagi', 'TOKO');
-  _cache.settings = s;
-  _cache.toko = list;
+  const rows = _tokoRows();
+  if (!rows.length) throw _fail('Sheet Toko masih kosong', 'SETUP');
+  const name = String(p.toko || '').trim();
+  const toko = rows.filter(r => r.name === name)[0];
+  if (!toko) throw _fail('Pilih toko lagi', 'TOKO');
+  if (!toko.kode) throw _fail('Kode akses ' + name + ' belum diisi di sheet Toko', 'SETUP');
+  if (String(p.kode || '').trim() !== toko.kode) { Utilities.sleep(800); throw _fail('Kode akses salah', 'AUTH'); }
+  _cache.settings = _settings();
 }
 
 function _register(p) {
@@ -183,16 +186,24 @@ function _member(t, values) {
 }
 
 function _tokoList() {
+  return _tokoRows().map(r => r.name);
+}
+
+function _tokoRows() {
   if (_cache.toko) return _cache.toko;
   const t = _sheet(SHEET.TOKO, TOKO_COLS);
   const last = t.sh.getLastRow();
-  if (last < 2) return [];
-  const seen = {};
   const out = [];
-  t.sh.getRange(2, t.col.store, last - 1, 1).getDisplayValues().forEach(r => {
-    const v = String(r[0]).replace(/\s+/g, ' ').trim();
-    if (v && !seen[v.toLowerCase()]) { seen[v.toLowerCase()] = 1; out.push(v); }
-  });
+  if (last >= 2) {
+    const seen = {};
+    t.sh.getRange(2, 1, last - 1, t.width).getDisplayValues().forEach(r => {
+      const name = String(r[t.col.store - 1]).replace(/\s+/g, ' ').trim();
+      if (!name || seen[name.toLowerCase()]) return;
+      seen[name.toLowerCase()] = 1;
+      out.push({ name: name, kode: String(r[t.col.kode - 1]).trim() });
+    });
+  }
+  _cache.toko = out;
   return out;
 }
 
@@ -213,7 +224,6 @@ function _settings() {
   });
   const n = (k, fb) => { const d = String(map[k] || '').replace(/\D/g, ''); return d ? Number(d) : fb; };
   return {
-    kode: map['kode akses'] || '',
     rpp: Math.max(1, n('rupiah per poin', 1000)),
     batas: n('batas belanja', 0)
   };

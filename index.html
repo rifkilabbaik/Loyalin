@@ -178,6 +178,13 @@
           <select id="setToko"></select>
           <svg class="ic chev"><use href="#i-down"/></svg>
         </div>
+        <form class="toko-switch" id="tokoForm" autocomplete="off" hidden>
+          <div class="field">
+            <svg class="ic"><use href="#i-lock"/></svg>
+            <input id="setKode" type="password" autocomplete="off" enterkeyhint="go" maxlength="40" placeholder="Kode akses" />
+          </div>
+          <button class="btn btn-primary" type="submit" id="btnSetToko"><svg class="ic"><use href="#i-check"/></svg><span>Ganti toko</span></button>
+        </form>
         <span class="label">Warna</span>
         <div class="swatches" id="swatches">
           <button data-palette="orange" style="--sw:#EA580C" aria-label="Oranye"></button>
