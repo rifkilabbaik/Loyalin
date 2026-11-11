@@ -1,4 +1,4 @@
-const CACHE = 'loyalin-v2';
+const CACHE = 'loyalin-v3';
 const SHELL = [
   './',
   'index.html',

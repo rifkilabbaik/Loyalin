@@ -257,6 +257,7 @@ class Dropdown {
   }
 
   pick(v) {
+    Sfx.play('tap');
     this.close();
     this.btn.focus();
     if (v !== this.value) this.setValue(v);
@@ -289,6 +290,181 @@ const Loader = {
   hide() {
     this.n = Math.max(0, this.n - 1);
     if (!this.n) $('#loader').hidden = true;
+  }
+};
+
+const Sfx = {
+  ctx: null,
+  out: null,
+  nbuf: null,
+  last: {},
+
+  enabled() { return Store.get('sound') !== 'off'; },
+
+  ac() {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    if (!this.ctx) {
+      this.ctx = new AC();
+      const comp = this.ctx.createDynamicsCompressor();
+      this.out = this.ctx.createGain();
+      this.out.gain.value = 0.8;
+      this.out.connect(comp);
+      comp.connect(this.ctx.destination);
+    }
+    if (this.ctx.state === 'suspended') this.ctx.resume().catch(() => {});
+    return this.ctx;
+  },
+
+  unlock() { if (this.enabled()) this.ac(); },
+
+  tone(f, t, d, o) {
+    o = o || {};
+    const c = this.ctx, osc = c.createOscillator(), g = c.createGain();
+    osc.type = o.type || 'sine';
+    osc.frequency.setValueAtTime(f, t);
+    if (o.to) osc.frequency.exponentialRampToValueAtTime(o.to, t + d);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(o.vol || 0.2, t + (o.a || 0.006));
+    g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+    osc.connect(g);
+    g.connect(this.out);
+    osc.start(t);
+    osc.stop(t + d + 0.03);
+  },
+
+  noise(t, d, o) {
+    o = o || {};
+    const c = this.ctx;
+    if (!this.nbuf) {
+      const len = Math.floor(c.sampleRate * 0.4);
+      this.nbuf = c.createBuffer(1, len, c.sampleRate);
+      const ch = this.nbuf.getChannelData(0);
+      for (let i = 0; i < len; i++) ch[i] = Math.random() * 2 - 1;
+    }
+    const src = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
+    src.buffer = this.nbuf;
+    f.type = o.filter || 'lowpass';
+    f.frequency.value = o.freq || 1200;
+    g.gain.setValueAtTime(o.vol || 0.3, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+    src.connect(f);
+    f.connect(g);
+    g.connect(this.out);
+    src.start(t);
+    src.stop(t + d + 0.02);
+  },
+
+  play(name) {
+    if (!this.enabled()) return;
+    const now = performance.now();
+    if (this.last[name] && now - this.last[name] < 120) return;
+    this.last[name] = now;
+    const c = this.ac();
+    if (!c) return;
+    const t = c.currentTime + 0.01;
+    const T = (f, dt, d, o) => this.tone(f, t + dt, d, o);
+    try {
+      switch (name) {
+        case 'scan':
+          T(1175, 0, 0.08, { vol: 0.16 });
+          T(1760, 0.075, 0.13, { vol: 0.16 });
+          break;
+        case 'tap':
+          T(880, 0, 0.05, { vol: 0.07, to: 1150 });
+          break;
+        case 'pop':
+          T(460, 0, 0.13, { vol: 0.22, to: 1080 });
+          T(1500, 0.05, 0.08, { vol: 0.06 });
+          break;
+        case 'stamp':
+          T(170, 0, 0.24, { vol: 0.6, to: 46 });
+          T(95, 0, 0.17, { type: 'triangle', vol: 0.32, to: 40 });
+          this.noise(t, 0.07, { vol: 0.38, freq: 1700 });
+          this.noise(t + 0.015, 0.13, { vol: 0.2, freq: 380 });
+          break;
+        case 'chime':
+          [1318.5, 1661.2, 1975.5].forEach((f, i) => T(f, 0.02 + i * 0.085, 0.45, { type: 'triangle', vol: 0.13 }));
+          break;
+        case 'full':
+          [784, 987.8, 1174.7, 1568].forEach((f, i) => T(f, i * 0.1, 0.55, { type: 'triangle', vol: 0.14 }));
+          [2093, 2637, 3136, 2637, 3136].forEach((f, i) => T(f, 0.46 + i * 0.065, 0.24, { vol: 0.05 }));
+          break;
+        case 'ok':
+          T(988, 0, 0.1, { type: 'triangle', vol: 0.14 });
+          T(1480, 0.09, 0.2, { type: 'triangle', vol: 0.14 });
+          break;
+        case 'warn':
+          T(660, 0, 0.14, { type: 'triangle', vol: 0.15 });
+          T(523, 0.13, 0.22, { type: 'triangle', vol: 0.15 });
+          break;
+        case 'error':
+          T(240, 0, 0.11, { type: 'square', vol: 0.05 });
+          T(180, 0.12, 0.2, { type: 'square', vol: 0.05 });
+          break;
+      }
+    } catch (e) {}
+  }
+};
+
+const Stamp = {
+  ROT: [-12, 9, -6, 14, -9, 5, -14, 11, -4, 12, -8, 6],
+
+  slots() { return App.cfg().slots; },
+
+  prog(total, slots) {
+    total = Math.max(0, Math.floor(Number(total) || 0));
+    if (!total) return { filled: 0, full: 0 };
+    const r = total % slots;
+    return r ? { filled: r, full: Math.floor(total / slots) } : { filled: slots, full: total / slots };
+  },
+
+  cols(n) { return n <= 6 ? n : n <= 12 ? Math.ceil(n / 2) : 6; },
+
+  html(filled, slots, badge, stagger) {
+    let cells = '';
+    for (let i = 0; i < slots; i++) {
+      const gift = i === slots - 1;
+      cells += `<span class="slot${i < filled ? ' on' : ''}${gift ? ' gift' : ''}" style="--r:${this.ROT[i % 12]}deg;--i:${i}"><span class="ink">${ic(gift ? 'gift' : 'star')}</span>${gift ? ic('gift') : `<i>${i + 1}</i>`}</span>`;
+    }
+    return `<div class="scard${stagger ? ' stagger' : ''}"><div class="scard-head"><span class="scard-count">${ic('stamp')}<b>${filled}</b><small>/${slots}</small></span><span class="scard-gift"${badge ? '' : ' hidden'}>${ic('gift')}<b>×${badge}</b></span></div><div class="scard-grid" style="--cols:${this.cols(slots)}">${cells}</div></div>`;
+  },
+
+  render(el, total, stagger) {
+    const slots = this.slots();
+    const p = this.prog(total, slots);
+    el.innerHTML = this.html(p.filled, slots, p.full, stagger);
+    return p;
+  },
+
+  label(total) {
+    const slots = this.slots();
+    const p = this.prog(total, slots);
+    return { text: p.filled + '/' + slots, full: p.filled === slots };
+  },
+
+  chip(total) {
+    const l = this.label(total);
+    return `<span class="gain-total${l.full ? ' full' : ''}">${l.full ? ic('gift') : ''}${esc(l.text)}</span>`;
+  },
+
+  stamper() {
+    return '<div class="stamper"><svg viewBox="0 0 66 88" aria-hidden="true"><circle class="k" cx="33" cy="13" r="11"/><rect class="n" x="27" y="21" width="12" height="22" rx="5"/><rect class="b" x="7" y="40" width="52" height="22" rx="10"/><rect class="h" x="13" y="45" width="16" height="5" rx="2.5"/><rect class="p" x="11" y="61" width="44" height="13" rx="4"/></svg></div>';
+  },
+
+  burst(host, from, n) {
+    const hr = host.getBoundingClientRect(), fr = from.getBoundingClientRect();
+    const x = fr.left - hr.left + fr.width / 2, y = fr.top - hr.top + fr.height / 2;
+    const colors = ['var(--primary)', 'var(--sun)', 'var(--soft)', 'var(--ok)'];
+    for (let i = 0; i < n; i++) {
+      const a = (Math.PI * 2 * i) / n + Math.random() * 0.5;
+      const d = 40 + Math.random() * (n > 16 ? 110 : 60);
+      const el = document.createElement('i');
+      el.className = 'burst';
+      el.style.cssText = `left:${x}px;top:${y}px;--dx:${(Math.cos(a) * d).toFixed(1)}px;--dy:${(Math.sin(a) * d).toFixed(1)}px;--s:${(6 + Math.random() * 9).toFixed(1)}px;background:${colors[i % colors.length]}`;
+      host.appendChild(el);
+      setTimeout(() => el.remove(), 950);
+    }
   }
 };
 
@@ -327,8 +503,11 @@ const App = {
     $$('#manualSheet [data-close]').forEach(el => el.addEventListener('click', () => this.closeManual()));
     $('#tokoForm').addEventListener('submit', (e) => { e.preventDefault(); this.switchToko(); });
     $('#setKode').addEventListener('input', (e) => e.target.closest('.field').classList.remove('bad'));
-    $$('#swatches button').forEach(b => b.addEventListener('click', () => { Store.set('palette', b.dataset.palette); this.applyTheme(); }));
-    $$('#themeSeg button').forEach(b => b.addEventListener('click', () => { Store.set('theme', b.dataset.theme); this.applyTheme(); }));
+    $$('#swatches button').forEach(b => b.addEventListener('click', () => { Sfx.play('tap'); Store.set('palette', b.dataset.palette); this.applyTheme(); }));
+    $$('#themeSeg button').forEach(b => b.addEventListener('click', () => { Sfx.play('tap'); Store.set('theme', b.dataset.theme); this.applyTheme(); }));
+    $$('#soundSeg button').forEach(b => b.addEventListener('click', () => { Store.set('sound', b.dataset.sound); this.applyTheme(); Sfx.play('pop'); }));
+    document.addEventListener('pointerdown', () => Sfx.unlock(), { passive: true });
+    document.addEventListener('keydown', () => Sfx.unlock());
     $('#btnLogout').addEventListener('click', () => this.logout());
     $('#btnInstall').addEventListener('click', () => this.install());
     window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); this.installEvt = e; $('#btnInstall').hidden = false; });
@@ -362,29 +541,18 @@ const App = {
     setTimeout(() => s.remove(), 400);
   },
 
-  countUp(el, to, from, prefix) {
-    to = Number(to) || 0;
-    from = Number(from) || 0;
-    prefix = prefix || '';
-    cancelAnimationFrame(el._raf);
-    if (to === from || matchMedia('(prefers-reduced-motion: reduce)').matches) { el.textContent = prefix + fmt(to); return; }
-    const t0 = performance.now(), d = 750;
-    const step = (t) => {
-      const k = Math.min(1, (t - t0) / d);
-      el.textContent = prefix + fmt(from + (to - from) * (1 - Math.pow(1 - k, 3)));
-      if (k < 1) el._raf = requestAnimationFrame(step);
-    };
-    el.textContent = prefix + fmt(from);
-    el._raf = requestAnimationFrame(step);
-  },
 
   cfg() {
     const c = Store.json('cfg', {});
-    return { rpp: Number(c.rpp) || CONFIG.RUPIAH_PER_POIN, batas: Number(c.batas) || CONFIG.BATAS_BELANJA };
+    return {
+      min: Number(c.min) || CONFIG.MIN_BELANJA,
+      slots: Number(c.slots) || CONFIG.STAMP_PER_KARTU,
+      batas: Number(c.batas) || CONFIG.BATAS_BELANJA
+    };
   },
 
   saveSession(d) {
-    Store.setJson('cfg', { rpp: d.rpp, batas: d.batas });
+    Store.setJson('cfg', { min: d.min, slots: d.slots, batas: d.batas });
     if (Array.isArray(d.toko)) Store.setJson('tokoList', d.toko);
   },
 
@@ -402,6 +570,8 @@ const App = {
     root.setAttribute('data-mode', mode);
     $$('#swatches button').forEach(b => b.classList.toggle('on', b.dataset.palette === palette));
     $$('#themeSeg button').forEach(b => b.classList.toggle('on', b.dataset.theme === theme));
+    const sound = Sfx.enabled() ? 'on' : 'off';
+    $$('#soundSeg button').forEach(b => b.classList.toggle('on', b.dataset.sound === sound));
     const bg = getComputedStyle(root).getPropertyValue('--bg').trim();
     const meta = $('meta[name="theme-color"]');
     if (meta && bg) meta.setAttribute('content', bg);
@@ -448,6 +618,7 @@ const App = {
       Store.set('kode', kode);
       Store.set('toko', toko);
       this.saveSession(d);
+      Sfx.play('ok');
       this.enter();
     } catch (e) {
       if (e.code === 'AUTH') this.bad('#inKode');
@@ -506,7 +677,13 @@ const App = {
     if (this.view !== 'scan' && this.view !== 'setup') this.home();
   },
 
+  clearDone() {
+    (this.doneTimers || []).forEach(clearTimeout);
+    this.doneTimers = [];
+  },
+
   home(fromPop) {
+    this.clearDone();
     clearTimeout(this.backTimer);
     $('#ring').classList.remove('run');
     this.member = null;
@@ -526,21 +703,9 @@ const App = {
     const id = this.cleanId(raw);
     if (!id) { this.toast('QR tidak dikenali', true); setTimeout(() => Scanner.resume(), 1200); return; }
     $('#cam').classList.add('found');
-    this.beep();
-    await this.lookup(id);
-  },
-
-  beep() {
+    Sfx.play('scan');
     if (navigator.vibrate) navigator.vibrate(60);
-    try {
-      this.audio = this.audio || new (window.AudioContext || window.webkitAudioContext)();
-      const o = this.audio.createOscillator(), g = this.audio.createGain();
-      o.type = 'sine'; o.frequency.value = 1320;
-      g.gain.setValueAtTime(0.12, this.audio.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.001, this.audio.currentTime + 0.12);
-      o.connect(g); g.connect(this.audio.destination);
-      o.start(); o.stop(this.audio.currentTime + 0.13);
-    } catch (e) {}
+    await this.lookup(id);
   },
 
   async lookup(id) {
@@ -561,7 +726,7 @@ const App = {
     $('#mInitial').textContent = (m.name || '?').trim().charAt(0).toUpperCase();
     $('#mName').textContent = m.name;
     $('#mPhone').textContent = Phone.display(m.phone);
-    this.countUp($('#mPoints'), m.points, 0);
+    this.memberProg = Stamp.render($('#mCard'), m.stamps, true);
     $('#inAmount').value = '';
     this.onAmount($('#inAmount'));
     this.show('member');
@@ -581,15 +746,16 @@ const App = {
   onAmount(input) {
     const n = Number(digits(input.value).slice(0, 12)) || 0;
     input.value = n ? fmt(n) : '';
-    const pts = Math.floor(n / this.cfg().rpp);
-    const base = this.member ? Number(this.member.points) || 0 : 0;
+    const { min, slots } = this.cfg();
+    const ok = !!this.member && n >= min;
     const gain = $('#gain');
-    const before = $('#gainPts').textContent;
-    $('#gainPts').textContent = '+' + fmt(pts);
-    $('#gainTotal').textContent = fmt(base + pts);
-    gain.classList.toggle('empty', !pts);
-    if (before !== $('#gainPts').textContent) { gain.classList.remove('bump'); void gain.offsetWidth; gain.classList.add('bump'); }
-    $('#btnSave').disabled = !pts;
+    $('#gainMin').textContent = fmt(min);
+    if (ok) $('#gainTotal').outerHTML = Stamp.chip((Number(this.member.stamps) || 0) + 1).replace('class="gain-total', 'id="gainTotal" class="gain-total');
+    if (ok && !gain.classList.contains('ok')) Sfx.play('pop');
+    gain.classList.toggle('ok', ok);
+    const p = this.memberProg;
+    $$('#mCard .slot').forEach((el, i) => el.classList.toggle('ghost', ok && !!p && p.filled < slots && i === p.filled));
+    $('#btnSave').disabled = !ok;
   },
 
   onPhone(input) {
@@ -598,28 +764,27 @@ const App = {
     input.closest('.field').classList.remove('bad');
   },
 
-  txRows(amount, pts, total, big) {
+  txRows(amount, total, big) {
     const m = this.member;
     return [
       { icon: 'user', html: `${esc(m.name)} <span class="c-sub">#${esc(m.id)}</span>` },
       { icon: 'store', html: esc(Store.get('toko')) },
       { cls: 'big' + (big ? ' alert' : ''), html: 'Rp ' + fmt(amount) },
-      { icon: 'star', html: `<span class="c-gain"><span class="gain-plus">${ic('star')}<b>+${fmt(pts)}</b></span>${ic('arrow')}<span class="gain-total">${fmt(total)}</span></span>` }
+      { icon: 'stamp', html: `<span class="c-gain"><span class="gain-plus">${ic('stamp')}<b>+1</b></span>${ic('arrow')}${Stamp.chip(total)}</span>` }
     ];
   },
 
   async saveTx() {
     const m = this.member;
     const amount = Number(digits($('#inAmount').value)) || 0;
-    const { rpp, batas } = this.cfg();
-    if (!m || amount < rpp) return;
-    const pts = Math.floor(amount / rpp);
-    const total = (Number(m.points) || 0) + pts;
+    const { min, batas } = this.cfg();
+    if (!m || amount < min) return;
+    const total = (Number(m.stamps) || 0) + 1;
     const big = batas > 0 && amount >= batas;
     const ok = await this.confirm({
       title: 'Sudah sesuai?',
       icon: big ? 'alert' : 'check',
-      rows: this.txRows(amount, pts, total, big),
+      rows: this.txRows(amount, total, big),
       warn: big ? 'Nominal besar, cek lagi' : '',
       yes: 'Ya, simpan'
     });
@@ -635,19 +800,18 @@ const App = {
       const r = await Api.addTx({ id: m.id, amount, force: !!force });
       if (r.duplicate) {
         this.busy(btn, false);
-        const pts = Math.floor(amount / this.cfg().rpp);
         const again = await this.confirm({
           title: 'Baru saja tercatat',
           icon: 'alert',
-          rows: this.txRows(amount, pts, (Number(m.points) || 0) + pts, false),
-          warn: 'Nominal sama masuk ' + this.ago(r.seconds),
+          rows: this.txRows(amount, (Number(m.stamps) || 0) + 1, false),
+          warn: 'Sudah dapat stamp ' + this.ago(r.seconds),
           yes: 'Tetap simpan',
           no: 'Batal'
         });
         if (again) await this.sendTx(amount, true);
         return;
       }
-      this.openDone({ name: r.name || m.name, plus: r.points, total: r.total });
+      this.openDone({ name: r.name || m.name, total: r.total });
     } catch (e) {
       this.fail(e);
     } finally {
@@ -682,6 +846,7 @@ const App = {
     try {
       const r = await Api.register({ id: this.newId, name, phone });
       if (r.exists) this.toast('ID sudah terdaftar');
+      else Sfx.play('ok');
       this.openMember(r.member);
     } catch (e) {
       if (e.code === 'HP') this.bad('#inPhone');
@@ -692,11 +857,47 @@ const App = {
   },
 
   openDone(r) {
-    this.countUp($('#dPlus'), r.plus, 0, '+');
+    const slots = Stamp.slots();
+    const now = Stamp.prog(r.total, slots);
+    const completes = now.filled === slots;
+    const start = Math.max(0, now.filled - 1);
+    const card = $('#dCard');
+    card.innerHTML = Stamp.html(start, slots, completes ? now.full - 1 : now.full, false) + Stamp.stamper();
     $('#dName').textContent = r.name;
-    this.countUp($('#dTotal'), r.total, (Number(r.total) || 0) - (Number(r.plus) || 0));
+    const plus = $('#dPlus');
+    plus.classList.remove('show');
     this.show('done');
-    if (navigator.vibrate) navigator.vibrate([40, 60, 40]);
+    this.clearDone();
+    const target = $$('.slot', card)[start];
+    const stamper = $('.stamper', card);
+    const cr = card.getBoundingClientRect(), tr = target.getBoundingClientRect();
+    const sw = stamper.offsetWidth, sh = stamper.offsetHeight;
+    stamper.style.left = (tr.left - cr.left + tr.width / 2 - sw / 2) + 'px';
+    stamper.style.top = (tr.top - cr.top + tr.height / 2 + tr.height * 0.3 - sh * 74 / 88) + 'px';
+    stamper.classList.add('go');
+    this.doneTimers = [
+      setTimeout(() => {
+        target.classList.add('on', 'fresh');
+        const sc = $('.scard', card);
+        sc.classList.add('thud');
+        const n = $('.scard-count b', card);
+        n.textContent = now.filled;
+        n.classList.add('bump');
+        Stamp.burst(card, target, completes ? 22 : 14);
+        Sfx.play('stamp');
+        if (navigator.vibrate) navigator.vibrate([25, 30, 60]);
+      }, 400),
+      setTimeout(() => {
+        plus.classList.add('show');
+        if (!completes) { Sfx.play('chime'); return; }
+        Sfx.play('full');
+        const g = $('.scard-gift', card);
+        g.hidden = false;
+        $('b', g).textContent = '×' + now.full;
+        g.classList.add('pop');
+        Stamp.burst(card, target, 30);
+      }, 780)
+    ];
     const ring = $('#ring');
     ring.style.setProperty('--t', CONFIG.AUTO_BACK_MS + 'ms');
     ring.classList.remove('run'); void ring.offsetWidth; ring.classList.add('run');
@@ -777,6 +978,7 @@ const App = {
       Store.set('toko', toko);
       this.saveSession(d);
       $('#tokoName').textContent = toko;
+      Sfx.play('ok');
       $('#tokoForm').hidden = true;
       $('#setKode').value = '';
       this.toast(toko);
@@ -814,6 +1016,7 @@ const App = {
     return new Promise(resolve => {
       if (this.pending) this.pending(false);
       this.pending = resolve;
+      Sfx.play(o.icon === 'alert' ? 'warn' : 'tap');
       $('#cTitle').textContent = o.title;
       $('#cIcon').classList.toggle('warn', o.icon === 'alert');
       $('#cIcon').innerHTML = ic(o.icon || 'check');
@@ -843,6 +1046,7 @@ const App = {
   },
 
   bad(sel) {
+    Sfx.play('error');
     const f = $(sel).closest('.field');
     f.classList.remove('bad'); void f.offsetWidth; f.classList.add('bad');
     $(sel).focus();
@@ -856,6 +1060,7 @@ const App = {
   },
 
   toast(msg, long) {
+    if (long) Sfx.play('error');
     const t = $('#toast');
     t.textContent = msg;
     t.hidden = false;

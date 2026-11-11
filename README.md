@@ -1,17 +1,24 @@
 # Loyalin
 
-PWA kasir untuk scan kartu member (QR berisi nomor ID), daftar member baru, dan menambah poin belanja. Setiap Rp 1.000 = 1 poin.
+PWA kasir untuk scan kartu member (QR berisi nomor ID), daftar member baru, dan memberi **stamp**: belanja minimal Rp 13.000 dapat **1 stamp per transaksi** (tidak berlaku kelipatan).
 
 ## Alur
 
 1. **Pertama kali buka**: pilih **Toko** lalu isi **Kode akses** toko itu (dari sheet `Toko`). Tanpa kode yang benar aplikasi tidak bisa dipakai.
 2. **Scan** QR kartu, atau **Ketik ID / HP** (cari pakai ID atau No. HP).
 3. **ID belum terdaftar**: isi Nama dan No. HP lalu **Daftar**.
-4. **ID terdaftar**: tampil nama, No. HP, dan poin. Ketik nominal belanja, poin yang didapat langsung terlihat, lalu **Simpan**.
+4. **ID terdaftar**: tampil nama, No. HP, dan **kartu stamp** (10 slot, slot terakhir = hadiah). Ketik nominal belanja:
+   - di bawah Rp 13.000: terkunci, tombol Simpan mati
+   - Rp 13.000 ke atas: stamp bayangan berdenyut di slot berikutnya, **+1 → 4/10**, lalu **Simpan**
 5. Sebelum disimpan selalu muncul **Sudah sesuai?**. Ada peringatan jika:
    - nominal ≥ **Batas Belanja**
-   - nominal yang sama untuk ID yang sama sudah masuk dalam 2 menit terakhir
-6. **Pengaturan**: ganti toko (wajib memasukkan kode akses toko tujuan), warna (Oranye / Peach / Mint / Lavender), tema (Terang / Gelap / Otomatis), Install, Keluar.
+   - ID yang sama sudah dapat stamp dalam 10 menit terakhir (mencegah transaksi dipecah)
+6. **Berhasil**: alat cap turun dan mengecap slot berikutnya. Jika kartu penuh (10/10), slot hadiah menyala dan muncul lencana hadiah **×1**. Stamp ke-11 mulai di kartu baru (1/10, hadiah ×1 tetap tampil).
+7. **Pengaturan**: ganti toko (wajib memasukkan kode akses toko tujuan), warna (Oranye / Peach / Mint / Lavender), tema (Terang / Gelap / Otomatis), **suara** (Nyala / Mati), Install, Keluar.
+
+## Efek suara
+
+Dibuat langsung oleh browser (Web Audio), tanpa file audio: scan berhasil, stamp siap (nominal cukup), *dok* saat dicap, *ting* setelah stamp masuk, fanfare saat kartu penuh, nada peringatan, dan nada error. Bisa dimatikan di Pengaturan.
 
 ## Nomor HP
 
@@ -27,12 +34,14 @@ Sheet dibuat otomatis jika belum ada. Kolom dibaca berdasarkan nama header, sehi
 
 | Sheet | Kolom |
 |---|---|
-| `Member` | ID, Nama, No HP, Poin, Total Belanja, Jumlah Transaksi, Toko Daftar, Terdaftar, Terakhir Belanja |
-| `Transaksi` | Waktu, ID, Nama, No HP, Jenis, Belanja, Poin, Saldo Poin, Toko |
+| `Member` | ID, Nama, No HP, Stamp, Total Belanja, Jumlah Transaksi, Toko Daftar, Terdaftar, Terakhir Belanja |
+| `Transaksi` | Waktu, ID, Nama, No HP, Jenis, Belanja, Stamp, Saldo Stamp, Toko |
 | `Toko` | Nama Toko, Kode Akses (diisi manual, satu toko per baris) |
-| `Pengaturan` | Rupiah per Poin (1000), Batas Belanja (5000000) |
+| `Pengaturan` | Minimal Belanja (13000), Stamp per Kartu (10), Batas Belanja (5000000) |
 
-`Poin` di `Member` adalah saldo terkini. `Transaksi` adalah riwayat lengkap (`Jenis` = `Belanja`; nanti bisa ditambah `Tukar` untuk penukaran poin). **Loyalin Dashbor** cukup membaca dua sheet ini.
+`Stamp` di `Member` adalah total stamp terkini. Kartu ke-n dihitung dari total ini: 23 stamp = 2 kartu penuh (hadiah ×2) + 3/10. `Transaksi` adalah riwayat lengkap (`Jenis` = `Belanja`, `Stamp` = 1; nanti bisa ditambah `Tukar` dengan stamp negatif). **Loyalin Dashbor** cukup membaca dua sheet ini.
+
+`Minimal Belanja` berlaku **≥** (Rp 13.000 pas dapat stamp). Jika maksudnya harus lebih dari Rp 13.000, isi `13001`. Kolom `Poin` dari versi lama tetap terbaca sebagai `Stamp`; sebaiknya ganti judulnya menjadi `Stamp` dan kosongkan angka poin lama.
 
 ## Setup Apps Script
 

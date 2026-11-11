@@ -53,6 +53,10 @@
       <symbol id="i-auto" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v18" /><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></g></symbol>
       <symbol id="i-logout" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M9 21H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3M16 17l5-5-5-5M21 12H9"/></symbol>
       <symbol id="i-install" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M12 3v12M7 10l5 5 5-5M5 21h14"/></symbol>
+      <symbol id="i-stamp" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 12.5V9.6a3.6 3.6 0 1 1 5 0v2.9"/><path d="M4.5 12.5h15a1.5 1.5 0 0 1 1.5 1.5v3H3v-3a1.5 1.5 0 0 1 1.5-1.5z"/><path d="M5 21h14"/></g></symbol>
+      <symbol id="i-gift" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="5" rx="1.5"/><path d="M5 13v6.5A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V13M12 8v13"/><path d="M12 8c-1.6-3.2-5-3.6-5-1.5S9.8 8 12 8zM12 8c1.6-3.2 5-3.6 5-1.5S14.2 8 12 8z"/></g></symbol>
+      <symbol id="i-sound" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6.5 9H3v6h3.5L11 19z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></g></symbol>
+      <symbol id="i-mute" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6.5 9H3v6h3.5L11 19z"/><path d="M16 9.5l5 5M21 9.5l-5 5"/></g></symbol>
       <symbol id="i-upload" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18a5 5 0 0 1-.6-10A6 6 0 0 1 18 8.5a4.5 4.5 0 0 1-.5 9.5"/><path d="M12 12v9M8.5 15.5L12 12l3.5 3.5"/></g></symbol>
       <symbol id="i-alert" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></g></symbol>
     </defs>
@@ -120,11 +124,7 @@
             <div class="who-phone"><svg class="ic"><use href="#i-phone"/></svg><span id="mPhone"></span></div>
           </div>
         </div>
-        <div class="hero-points">
-          <span class="pts-star"><svg class="ic"><use href="#i-star"/></svg></span>
-          <span class="pts-num" id="mPoints">0</span>
-          <span class="pts-unit">poin</span>
-        </div>
+        <div class="hero-card" id="mCard"></div>
       </div>
       <form class="card" id="txForm" autocomplete="off">
         <label class="label" for="inAmount">Belanja</label>
@@ -132,10 +132,11 @@
           <span class="money-pre">Rp</span>
           <input id="inAmount" inputmode="numeric" enterkeyhint="done" placeholder="0" />
         </div>
-        <div class="gain empty" id="gain">
-          <span class="gain-plus"><svg class="ic"><use href="#i-star"/></svg><b id="gainPts">+0</b></span>
+        <div class="gain" id="gain">
+          <span class="gain-lock"><svg class="ic"><use href="#i-lock"/></svg><b id="gainMin"></b></span>
+          <span class="gain-plus"><svg class="ic"><use href="#i-stamp"/></svg><b>+1</b></span>
           <svg class="ic gain-arrow"><use href="#i-arrow"/></svg>
-          <span class="gain-total" id="gainTotal">0</span>
+          <span class="gain-total" id="gainTotal"></span>
         </div>
         <button class="btn btn-primary btn-big" type="submit" id="btnSave" disabled><svg class="ic"><use href="#i-check"/></svg><span>Simpan</span></button>
       </form>
@@ -166,12 +167,11 @@
     </section>
 
     <section class="view" data-view="done">
-      <div class="done">
+      <div class="done" id="done">
         <div class="confetti"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-        <span class="done-check"><svg class="ic"><use href="#i-check"/></svg></span>
-        <div class="done-plus"><svg class="ic"><use href="#i-star"/></svg><span id="dPlus">+0</span></div>
+        <div class="done-card" id="dCard"></div>
+        <div class="done-plus" id="dPlus"><svg class="ic"><use href="#i-stamp"/></svg><span>+1</span></div>
         <div class="done-name" id="dName"></div>
-        <div class="done-total"><span id="dTotal">0</span> poin</div>
       </div>
       <button class="btn btn-primary btn-big" id="btnAgain"><span class="ring" id="ring"></span><svg class="ic"><use href="#i-qr"/></svg><span>Scan lagi</span></button>
     </section>
@@ -202,6 +202,11 @@
           <button data-theme="light"><svg class="ic"><use href="#i-sun"/></svg><span>Terang</span></button>
           <button data-theme="dark"><svg class="ic"><use href="#i-moon"/></svg><span>Gelap</span></button>
           <button data-theme="auto"><svg class="ic"><use href="#i-auto"/></svg><span>Otomatis</span></button>
+        </div>
+        <span class="label">Suara</span>
+        <div class="seg" id="soundSeg">
+          <button data-sound="on"><svg class="ic"><use href="#i-sound"/></svg><span>Nyala</span></button>
+          <button data-sound="off"><svg class="ic"><use href="#i-mute"/></svg><span>Mati</span></button>
         </div>
       </div>
       <div class="set-actions">

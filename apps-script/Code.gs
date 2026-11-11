@@ -1,12 +1,12 @@
 const SPREADSHEET_ID = '1iZXLdFJiIfJt_glCwAqgIUrKGZmedTfsLeLSdTZU0e8';
-const VERSION = '1.0';
+const VERSION = '2.0';
 const SHEET = { MEMBER: 'Member', TRANSAKSI: 'Transaksi', TOKO: 'Toko', PENGATURAN: 'Pengaturan' };
 
 const MEMBER_COLS = [
   ['id', 'ID', ['id member', 'id kartu']],
   ['name', 'Nama', ['nama member', 'nama customer', 'nama pelanggan']],
   ['phone', 'No HP', ['no. hp', 'nomor hp', 'no telp', 'no. telp', 'nomor telepon', 'telepon', 'hp']],
-  ['points', 'Poin', ['point', 'jumlah poin']],
+  ['stamps', 'Stamp', ['stamps', 'jumlah stamp', 'poin', 'point', 'jumlah poin']],
   ['spent', 'Total Belanja', []],
   ['count', 'Jumlah Transaksi', ['transaksi']],
   ['store', 'Toko Daftar', []],
@@ -20,8 +20,8 @@ const TX_COLS = [
   ['phone', 'No HP', ['no. hp', 'nomor hp']],
   ['type', 'Jenis', []],
   ['amount', 'Belanja', ['nominal']],
-  ['points', 'Poin', ['point']],
-  ['balance', 'Saldo Poin', ['total poin']],
+  ['stamps', 'Stamp', ['stamps', 'poin', 'point']],
+  ['balance', 'Saldo Stamp', ['total stamp', 'saldo poin', 'total poin']],
   ['store', 'Toko', ['nama toko']]
 ];
 const TOKO_COLS = [
@@ -29,16 +29,16 @@ const TOKO_COLS = [
   ['kode', 'Kode Akses', ['kode', 'kode toko', 'pin', 'password']]
 ];
 const SET_COLS = [['key', 'Pengaturan', ['kunci', 'nama']], ['value', 'Nilai', ['isi', 'value']]];
-const DEFAULTS = [['Rupiah per Poin', '1000'], ['Batas Belanja', '5000000']];
+const DEFAULTS = [['Minimal Belanja', '13000'], ['Stamp per Kartu', '10'], ['Batas Belanja', '5000000']];
 
 const FORMATS = {
   id: '@', phone: '@',
   at: 'yyyy-mm-dd hh:mm:ss', createdAt: 'yyyy-mm-dd hh:mm:ss', lastAt: 'yyyy-mm-dd hh:mm:ss',
-  amount: '#,##0', spent: '#,##0', points: '#,##0', balance: '#,##0', count: '0',
+  amount: '#,##0', spent: '#,##0', stamps: '0', balance: '0', count: '0',
   value: '@', kode: '@'
 };
 const TEXT_KEYS = ['id', 'phone'];
-const DUP_SECONDS = 120;
+const DUP_SECONDS = 600;
 const MAX_AMOUNT = 1000000000;
 
 const _cache = {};
@@ -71,7 +71,7 @@ function _route(p) {
   if (a === 'toko') return _tokoList();
   if (a.indexOf('dasbor') === 0) return _dasbor(p);
   _auth(p);
-  if (a === 'login') return { rpp: _cache.settings.rpp, batas: _cache.settings.batas, toko: _tokoList() };
+  if (a === 'login') return { min: _cache.settings.min, slots: _cache.settings.slots, batas: _cache.settings.batas, toko: _tokoList() };
   if (a === 'member') return _findMember('id', p.id);
   if (a === 'cariHp') return _findMember('phone', p.phone);
   if (a === 'register') return _locked(() => _register(p));
@@ -102,8 +102,8 @@ function _register(p) {
   if (exist) return { exists: true, member: _member(t, exist.values) };
   const dup = _findRow(t, 'phone', phone);
   if (dup) throw _fail('No. HP sudah terdaftar di ID ' + _get(t, dup.values, 'id'), 'HP');
-  _append(t, { id: id, name: name, phone: phone, points: 0, spent: 0, count: 0, store: String(p.toko || '').trim(), createdAt: new Date() });
-  return { exists: false, member: { id: id, name: name, phone: phone, points: 0 } };
+  _append(t, { id: id, name: name, phone: phone, stamps: 0, spent: 0, count: 0, store: String(p.toko || '').trim(), createdAt: new Date() });
+  return { exists: false, member: { id: id, name: name, phone: phone, stamps: 0 } };
 }
 
 function _transaksi(p) {
@@ -111,7 +111,7 @@ function _transaksi(p) {
   const id = _id(p.id);
   const amount = Math.floor(Number(p.amount) || 0);
   if (!id) throw _fail('ID tidak valid');
-  if (amount < s.rpp) throw _fail('Belanja minimal Rp ' + _rp(s.rpp));
+  if (amount < s.min) throw _fail('Belanja minimal Rp ' + _rp(s.min));
   if (amount > MAX_AMOUNT) throw _fail('Nominal terlalu besar');
   const t = _sheet(SHEET.MEMBER, MEMBER_COLS);
   const found = _findRow(t, 'id', id);
@@ -119,14 +119,13 @@ function _transaksi(p) {
   const tx = _sheet(SHEET.TRANSAKSI, TX_COLS);
   const now = new Date();
   if (!p.force) {
-    const sec = _recentDup(tx, id, amount, now);
+    const sec = _recentDup(tx, id, now);
     if (sec !== null) return { duplicate: true, seconds: sec };
   }
   const m = found.values;
-  const pts = Math.floor(amount / s.rpp);
-  const total = _num(_get(t, m, 'points')) + pts;
+  const total = _num(_get(t, m, 'stamps')) + 1;
   _setCells(t, found.row, {
-    points: total,
+    stamps: total,
     spent: _num(_get(t, m, 'spent')) + amount,
     count: _num(_get(t, m, 'count')) + 1,
     lastAt: now
@@ -134,12 +133,12 @@ function _transaksi(p) {
   const name = String(_get(t, m, 'name'));
   _append(tx, {
     at: now, id: id, name: name, phone: _phone(_get(t, m, 'phone')), type: 'Belanja',
-    amount: amount, points: pts, balance: total, store: String(p.toko || '').trim()
+    amount: amount, stamps: 1, balance: total, store: String(p.toko || '').trim()
   });
-  return { points: pts, total: total, name: name };
+  return { stamps: 1, total: total, name: name };
 }
 
-function _recentDup(tx, id, amount, now) {
+function _recentDup(tx, id, now) {
   const last = tx.sh.getLastRow();
   if (last < 2) return null;
   const n = Math.min(80, last - 1);
@@ -150,7 +149,7 @@ function _recentDup(tx, id, amount, now) {
     if (!(at instanceof Date)) continue;
     const sec = (now.getTime() - at.getTime()) / 1000;
     if (sec < 0 || sec > DUP_SECONDS) continue;
-    if (_id(r[tx.col.id - 1]) === id && _num(r[tx.col.amount - 1]) === amount) return Math.round(sec);
+    if (_id(r[tx.col.id - 1]) === id) return Math.round(sec);
   }
   return null;
 }
@@ -182,7 +181,7 @@ function _member(t, values) {
     id: _id(_get(t, values, 'id')),
     name: String(_get(t, values, 'name') || ''),
     phone: _phone(_get(t, values, 'phone')),
-    points: _num(_get(t, values, 'points'))
+    stamps: _num(_get(t, values, 'stamps'))
   };
 }
 
@@ -225,7 +224,8 @@ function _settings() {
   });
   const n = (k, fb) => { const d = String(map[k] || '').replace(/\D/g, ''); return d ? Number(d) : fb; };
   return {
-    rpp: Math.max(1, n('rupiah per poin', 1000)),
+    min: Math.max(1, n('minimal belanja', 13000)),
+    slots: Math.min(30, Math.max(2, n('stamp per kartu', 10))),
     batas: n('batas belanja', 0)
   };
 }
