@@ -149,6 +149,7 @@ function _recentDup(tx, id, now) {
     if (!(at instanceof Date)) continue;
     const sec = (now.getTime() - at.getTime()) / 1000;
     if (sec < 0 || sec > DUP_SECONDS) continue;
+    if (tx.col.type && String(r[tx.col.type - 1]).trim().toLowerCase() === 'batal') continue;
     if (_id(r[tx.col.id - 1]) === id) return Math.round(sec);
   }
   return null;

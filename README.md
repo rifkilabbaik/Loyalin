@@ -37,7 +37,7 @@ Sheet dibuat otomatis jika belum ada. Kolom dibaca berdasarkan nama header, sehi
 | `Member` | ID, Nama, No HP, Stamp, Total Belanja, Jumlah Transaksi, Toko Daftar, Terdaftar, Terakhir Belanja |
 | `Transaksi` | Waktu, ID, Nama, No HP, Jenis, Belanja, Stamp, Saldo Stamp, Toko |
 | `Toko` | Nama Toko, Kode Akses (diisi manual, satu toko per baris) |
-| `Pengaturan` | Minimal Belanja (13000), Stamp per Kartu (10), Batas Belanja (5000000) |
+| `Pengaturan` | Minimal Belanja (13000), Stamp per Kartu (10), Batas Belanja (5000000), Kode Admin (untuk Dasbor) |
 
 `Stamp` di `Member` adalah total stamp terkini. Kartu ke-n dihitung dari total ini: 23 stamp = 2 kartu penuh (hadiah ×2) + 3/10. `Transaksi` adalah riwayat lengkap (`Jenis` = `Belanja`, `Stamp` = 1; nanti bisa ditambah `Tukar` dengan stamp negatif). **Loyalin Dashbor** cukup membaca dua sheet ini.
 
@@ -55,7 +55,15 @@ Sheet dibuat otomatis jika belum ada. Kolom dibaca berdasarkan nama header, sehi
 
 Jika kode akses suatu toko diganti di sheet, kasir di toko itu otomatis diminta memasukkan kode baru.
 
-**Loyalin Dasbor** memakai project Apps Script ini juga: tambahkan file `Dasbor.gs` dari repo [Loyalin-Dasbor](https://github.com/rifkilabbaik/Loyalin-Dasbor). Tanpa file itu, aplikasi kasir tetap berjalan normal.
+### Loyalin Dasbor
+
+Dasbor memakai project Apps Script yang sama, lewat file [`apps-script/Dasbor.gs`](apps-script/Dasbor.gs) di repo ini:
+
+1. Di editor Apps Script: **+ → Script**, beri nama `Dasbor`, lalu tempel isi `apps-script/Dasbor.gs`. Jangan digabung ke `Code.gs`.
+2. Jalankan fungsi **`setupDasbor`** sekali. Baris `Kode Admin` akan ditambahkan ke sheet `Pengaturan`; isi kodenya (format teks).
+3. **Deploy → Manage deployments → New version** (URL tetap sama).
+
+Aksi berawalan `dasbor` (`dasbor`, `dasborMember`, `dasborHapus`, `dasborBatal`) hanya bisa dipakai dengan Kode Admin. Data yang dikirim: `min`, `slots`, `batas`, `toko`, `members` (`[id, nama, hp, stamp, total belanja, jumlah transaksi, toko daftar, terdaftar, terakhir belanja]`), dan `tx` (`[waktu, id, jenis, belanja, stamp, saldo stamp, toko, nama, baris]`). Transaksi yang dibatalkan dari Dasbor berubah jadi Jenis `Batal`, stamp member berkurang 1, dan tidak memicu peringatan dobel di kasir. Tanpa `Dasbor.gs`, aplikasi kasir tetap berjalan normal.
 
 ## Hosting & install
 
